@@ -367,7 +367,7 @@ function YahtzeeScreen:isRoundOver()
 end
 
 function YahtzeeScreen:onNewGame()
-    if self._ai_step then UIManager:unschedule(self._ai_step) end
+    self:cancelScheduled()  -- a pending computer step belongs to the old game
     self._ai_step, self.ai_holds_shown, self.pending, self.new_best = nil, nil, nil, nil
     self.board = YahtzeeBoard:new{ players = self:_playerSetup() }
     self:save()
@@ -389,13 +389,13 @@ function YahtzeeScreen:maybeRunAI()
     if self.closed or self._ai_step or board.game_over or not board:currentPlayer().ai then
         return
     end
-    self._ai_step = function()
+    local step = function()
         self._ai_step = nil
         if self.closed then return end
         self:_aiStep()
         self:maybeRunAI()
     end
-    UIManager:scheduleIn(AI_DELAY, self._ai_step)
+    self._ai_step = self:schedule(AI_DELAY, step)
 end
 
 function YahtzeeScreen:_aiStep()
